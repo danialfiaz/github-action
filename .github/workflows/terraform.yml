@@ -38,6 +38,9 @@ jobs:
         aws-secret-access-key: ${{ secrets.ACCESSKEY }}
         aws-region: us-east-1
     # Generates an execution plan for Terraform
+    - name: Terraform Format
+    - name: terraform fmt -recursive
+    
     - name: Terraform Plan
       run: terraform plan
 
