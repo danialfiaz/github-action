@@ -1,51 +1,134 @@
-name: 'Terraform'
-on:
-  push:
-    branches:
-      - master
+# name: 'Terraform'
+# on:
+#   push:
+#     branches:
+#       - master
 
 
-jobs:
-  terraform:
-    name: 'Terraform'
-    runs-on: ubuntu-latest
-    environment: production
-    strategy:
-      fail-fast: false
+# jobs:
+#   terraform:
+#     name: 'Terraform'
+#     runs-on: ubuntu-latest
+#     environment: production
+#     strategy:
+#       fail-fast: false
 
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
+#     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+#     defaults:
+#       run:
+#         shell: bash
 
-    steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout Repo
-      uses: actions/checkout@v2
+#     steps:
+#     # Checkout the repository to the GitHub Actions runner
+#     - name: Checkout Repo
+#       uses: actions/checkout@v2
 
     
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+#     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
 
 
-    - name: Terraform Init
-      run: terraform init
+#     - name: Terraform Init
+#       run: terraform init
 
-    - name: Terraform Validate
-      id: validate
-      run: terraform validate -no-color
+#     - name: Terraform Validate
+#       id: validate
+#       run: terraform validate -no-color
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.ACCESSKEYID }}
-        aws-secret-access-key: ${{ secrets.ACCESSKEY }}
-        aws-region: us-east-1
-    # Generates an execution plan for Terraform
-    # - name: Terraform Format
-    #   run: terraform fmt -recursive
+#     - name: Configure AWS Credentials
+#       uses: aws-actions/configure-aws-credentials@v1
+#       with:
+#         aws-access-key-id: ${{ secrets.ACCESSKEYID }}
+#         aws-secret-access-key: ${{ secrets.ACCESSKEY }}
+#         aws-region: us-east-1
+#     # Generates an execution plan for Terraform
+#     # - name: Terraform Format
+#     #   run: terraform fmt -recursive
 
-    - name: Terraform Plan
-      run: terraform plan
+#     - name: Terraform Plan
+#       run: terraform plan
 
-    # - name: Terraform Apply
-    #   run: terraform apply -auto-approve
+#     # - name: Terraform Apply
+#     #   run: terraform apply -auto-approve
+
+
+name: "Terraform"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Working directory input from user.
+      resource:
+        type: choice
+        description: Choose the resource
+        options:
+        - name_of_dir1
+        - name_of_dir2
+      # Terraform action you want to perform
+      action:
+        description: 'Terraform Action to Perform'
+        type: choice
+        options:
+        - Terraform_apply
+        - Terraform_destroy
+
+jobs:
+  terraform_apply:
+    name: "Terraform_apply"
+    if: ${{ github.event.inputs.action == 'Terraform_apply' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.event.inputs.resource }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
+      
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
+  
+  terraform_destroy:
+    name: "Terraform_destroy"
+    if: ${{ github.event.inputs.action == 'Terraform_destroy' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.event.inputs.resource }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
+      
+      - name: Terraform Destroy
+        id: destroy
+        working-directory: ${{ github.event.inputs.resource }}
+        run: terraform destroy -auto-approve -var-file=terraform.tfvars
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
