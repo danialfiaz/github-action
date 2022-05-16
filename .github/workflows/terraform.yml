@@ -55,14 +55,14 @@ name: "Terraform"
 
 on:
   workflow_dispatch:
-    # inputs:
-    #   # Working directory input from user.
-    #   resource:
-    #     type: choice
-    #     description: Choose the resource
-    #     options:
-    #     - github_action
-      # Terraform action you want to perform
+    inputs:
+      # Working directory input from user.
+      resource:
+        type: choice
+        description: Choose the resource
+        options:
+        - .
+      Terraform action you want to perform
       action:
         description: 'Terraform Action to Perform'
         type: choice
@@ -75,9 +75,9 @@ jobs:
     name: "Terraform_apply"
     if: ${{ github.event.inputs.action == 'Terraform_apply' }}
     runs-on: ubuntu-latest
-    # defaults:
-    #   run:
-    #     working-directory: ${{ github.event.inputs.resource }}
+    defaults:
+      run:
+        working-directory: ${{ github.event.inputs.resource }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
