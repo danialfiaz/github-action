@@ -49,12 +49,12 @@ jobs:
             AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
 
-      # - name: Terraform Apply
-      #   id: apply
-      #   run: terraform apply -auto-approve -var-file=terraform.tfvars
-      #   env:
-      #       AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
-      #       AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
   
   terraform_destroy:
     name: "Terraform_destroy"
