@@ -45,9 +45,9 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-        # env:
-        #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
-        #     AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.ACCESSKEYID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.ACCESSKEY }}
 
       # - name: Terraform Apply
       #   id: apply
