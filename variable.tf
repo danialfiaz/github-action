@@ -1,34 +1,39 @@
-variable "vpc"{
+variable "vpc" {
   type = object({
-    cidr_vpc_block = string
-    public         = list(string)
-    private        =list(string)
-    })
-}
-#RDS
-variable "rds" {
-  type = object({
-    identifier            = string
-    allocated_storage     = number
-    storage_type          =string
-    engine                = string
-    engine_version        = number
-    instance_class        =  string
-    name                  = string
-    username              = string
-    password              = string
-    parameter_group_name  = string
+    name                 = string
+    cidr                 = string
+    private_subnets      = list(string)
+    public_subnets       = list(string)
+    enable_nat_gateway   = bool
+    single_nat_gateway   = bool
+    enable_dns_hostnames = bool
   })
 }
 
-#ec2 variables
-variable "ec2" {
-  type= object({
-    ami           = string 
-    instance_type = string
-    key_name      = string
-    name_wp       = string
-    username_wp   = string 
-    password_wp   = string
-  })  
+variable "eks_cluster" {
+  type = object({
+    cluster_name                    = string
+    cluster_version                 = string
+    cluster_endpoint_private_access = bool
+    cluster_endpoint_public_access  = bool
+  })
+}
+
+variable "managed_node" {
+  type = object({
+    disk_size              = number
+    default_instance_types = list(string)
+    min_size               = number
+    max_size               = number
+    desired_size           = number
+    instance_types         = list(string)
+    capacity_type          = string
+    tags                   = map(string)
+  })
+}
+
+variable "aws" {
+  type = object({
+    region = string
+  })
 }

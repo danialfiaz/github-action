@@ -1,56 +1,60 @@
 data "aws_availability_zones" "azs" {}
-module "VPC_module" {
-  source            = "./modules/VPC"
-  cidr_vpc_block    = var.vpc.cidr_vpc_block
-  public            = var.vpc.public
-  private           = var.vpc.private
-  availability_zone = data.aws_availability_zones.azs.names
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 3.0"
+
+  name = var.vpc.name
+  cidr = var.vpc.cidr
+
+  azs             = data.aws_availability_zones.azs.names
+  private_subnets = var.vpc.private_subnets
+  public_subnets  = var.vpc.public_subnets
+
+  enable_nat_gateway   = var.vpc.enable_nat_gateway
+  single_nat_gateway   = var.vpc.single_nat_gateway
+  enable_dns_hostnames = var.vpc.enable_dns_hostnames
+
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.eks_cluster.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                                = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.eks_cluster.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"                       = 1
+  }
 }
 
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 18.0"
 
-module "EC2" {
-  source        = "./modules/EC2"
-  ami           = var.ec2.ami
-  instance_type = var.ec2.instance_type
-  key_name      = var.ec2.key_name
-  vpc_id        = module.VPC_module.vpc_id
-  subnet_id     = module.VPC_module.private_subnets_ids
-  rds_endpoint  = module.RDS.rds_endpoint
-  name_wp       = var.ec2.name_wp
-  username_wp   = var.ec2.username_wp
-  password_wp   = var.ec2.password_wp
-  alb_sg        = module.ALB.alb_sg
+  cluster_name    = var.eks_cluster.cluster_name
+  cluster_version = var.eks_cluster.cluster_version
+
+  cluster_endpoint_private_access = var.eks_cluster.cluster_endpoint_private_access
+  cluster_endpoint_public_access  = var.eks_cluster.cluster_endpoint_public_access
 
 
-}
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
 
-# RDS Module
+  # EKS Managed Node Group(s)
+  eks_managed_node_group_defaults = {
+    disk_size      = var.managed_node.disk_size
+    instance_types = var.managed_node.default_instance_types
+  }
+  eks_managed_node_groups = {
+    blue = {}
+    green = {
+      min_size     = var.managed_node.min_size
+      max_size     = var.managed_node.max_size
+      desired_size = var.managed_node.desired_size
 
-module "RDS" {
-  source               = "./modules/RDS"
-  identifier           = var.rds.identifier
-  allocated_storage    = var.rds.allocated_storage
-  storage_type         = var.rds.storage_type
-  engine               = var.rds.engine
-  engine_version       = var.rds.engine_version
-  instance_class       = var.rds.instance_class
-  name                 = var.rds.name
-  parameter_group_name = var.rds.parameter_group_name
-  username             = var.rds.username
-  password             = module.secret.secret_id.secret_string
-  vpc_id               = module.VPC_module.vpc_id
-  public               = module.VPC_module.public_subnets_ids
-  wordpress_sg         = module.EC2.wordpress_sg
-}
-
-module "ALB" {
-  source        = "./modules/ALB"
-  vpc_id        = module.VPC_module.vpc_id
-  public_subnet = module.VPC_module.public_subnets_ids
-  ec2_instance  = module.EC2.ec2_instance
-
-}
-module "secret"{
-  source   = "./modules/secret"
-  password = var.rds.password
+      instance_types = var.managed_node.instance_types
+      capacity_type  = var.managed_node.capacity_type
+    }
+  }
+  tags = var.managed_node.tags
 }
